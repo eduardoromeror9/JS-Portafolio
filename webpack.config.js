@@ -2,6 +2,9 @@ const path = require("path");
 const HtmlWebpackPlugin = require("html-webpack-plugin");
 const MiniCssExtractPlugin = require("mini-css-extract-plugin");
 const CopyPlugin = require("copy-webpack-plugin");
+const CcsMinimizerPlugin = require("css-minimizer-webpack-plugin");
+const TerserPlugin = require("terser-webpack-plugin");
+
 
 
 module.exports = {
@@ -12,11 +15,18 @@ module.exports = {
     path: path.resolve(__dirname, "dist"),
     // resolve lo que hace es darnos la ruta absoluta de el S.O hasta nuestro archivo
     // para no tener conflictos entre Linux, Windows, etc
-    filename: "main.js",
+    filename: "[name].[contenthash].js",
     // EL NOMBRE DEL ARCHIVO FINAL,
+    assetModuleFilename: "assets/images/[hash][ext][query]",
   },
   resolve: {
     extensions: [".js"], // LOS ARCHIVOS QUE WEBPACK VA A LEER
+    alias: {
+      '@utils': path.resolve     (__dirname, 'src/utils/'),
+      '@templates': path.resolve (__dirname, 'src/templates/'),
+      '@styles': path.resolve    (__dirname, 'src/styles/'),
+      '@images': path.resolve    (__dirname, 'src/assets/images/'),
+    },
   },
   module: {
     // REGLAS PARA TRABAJAR CON WEBPACK
@@ -36,6 +46,20 @@ module.exports = {
         test: /\.png/,
         type: 'asset/resource'
       },
+      {
+        test: /\.(woff|woff2)$/,
+        use: {
+          loader: "url-loader",
+          options: {
+            limit: 10000,
+            mimetype: "aplicación/font-woff",
+            name: "[name].[contenthash].[ext]",
+            outputPath: "./assets/fonts/",
+            publicPath: "../assets/fonts/",
+            esModule: false,
+          }
+        }
+      }
     ],
   },
   // SECCION DE PLUGINS
@@ -46,7 +70,9 @@ module.exports = {
       template: "./public/index.html", // LA RUTA AL TEMPLATE HTML
       filename: "./index.html", // NOMBRE FINAL DEL ARCHIVO
     }),
-    new MiniCssExtractPlugin(), // INSTANCIAMOS EL PLUGIN
+    new MiniCssExtractPlugin({
+      filename: 'assets/[name].[contenthash].css'
+    }), // INSTANCIAMOS EL PLUGIN
     new CopyPlugin({
       patterns: [
         {
@@ -56,4 +82,11 @@ module.exports = {
       ]
     })
   ],
+  optimization: {
+    minimize: true,
+    minimizer: [
+      new CcsMinimizerPlugin(),
+      new TerserPlugin()
+    ]
+  }
 };
